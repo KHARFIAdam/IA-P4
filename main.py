@@ -6,7 +6,12 @@ import sys
 import ctypes
 import time
 import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
+import pandas as pd
 from mpl_toolkits.mplot3d import Axes3D
+import sys
+sys.stdout.reconfigure(encoding='utf-8')
+
 
 # ————————————————————————
 # Constants
@@ -306,7 +311,7 @@ def get_ai_move(board, piece, mode, diff, param):
     metrics['heuristic'][piece].append(h)
     metrics['delta'][piece].append(d)
 
-    print(f"[AI][{mode}] P{piece} nodes={nodes} time={elapsed:.3f}s h={h:.1f} Δ={d:.1f} → {col}")
+    print(f"[AI][{mode}] P{piece} nodes={nodes} time={elapsed:.3f}s h={h:.1f} d={d:.1f} -> {col}")
     return col
 
 # ————————————————————————
@@ -589,7 +594,12 @@ if __name__ == '__main__':
     ax3.set_zlabel("Score heuristique")
     ax3.set_yticks([1,2])
     ax3.set_yticklabels(['J1','J2'])
-    ax3.legend()
+    legend_elements = [
+    Patch(facecolor='red', label='Joueur 1'),
+    Patch(facecolor='yellow', label='Joueur 2')
+    ]
+    ax3.legend(handles=legend_elements)
+
 
     # Scatter + line for delta
     fig4, ax4 = plt.subplots()
@@ -607,3 +617,25 @@ if __name__ == '__main__':
     ax4.legend()
 
     plt.show()
+
+    # Créer un DataFrame avec toutes les métriques
+    num_moves = max(len(metrics['nodes'][P1]), len(metrics['nodes'][P2]))
+    data = {
+        'Move Index': list(range(num_moves)),
+        'Nodes P1': metrics['nodes'][P1] + [None]*(num_moves - len(metrics['nodes'][P1])),
+        'Nodes P2': metrics['nodes'][P2] + [None]*(num_moves - len(metrics['nodes'][P2])),
+        'Time P1 (s)': metrics['times'][P1] + [None]*(num_moves - len(metrics['times'][P1])),
+        'Time P2 (s)': metrics['times'][P2] + [None]*(num_moves - len(metrics['times'][P2])),
+        'Heuristic P1': metrics['heuristic'][P1] + [None]*(num_moves - len(metrics['heuristic'][P1])),
+        'Heuristic P2': metrics['heuristic'][P2] + [None]*(num_moves - len(metrics['heuristic'][P2])),
+        'Delta P1': metrics['delta'][P1] + [None]*(num_moves - len(metrics['delta'][P1])),
+        'Delta P2': metrics['delta'][P2] + [None]*(num_moves - len(metrics['delta'][P2])),
+    }
+
+    df = pd.DataFrame(data)
+
+    # Exporter vers un fichier Excel
+    excel_filename = "rapport_métriques_puissance4.xlsx"
+    df.to_excel(excel_filename, index=False)
+
+    print(f"[EXPORT] Données de métriques exportées vers {excel_filename}")
